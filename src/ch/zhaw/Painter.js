@@ -1,27 +1,61 @@
+function Coordinates(x, y) {
+	this.x = x;
+	this.y = y;
+}
+
 function Painter() {
+
+	this.bottomLevelX = 20;
+	this.treeDepth = 0;
+
 	this.paintRoot = function() {
 		$("canvas").clearCanvas();
-		this.paintPage(150, 20, window.root);
+		this.setTreeDepth();
+		this.paintPage(new Coordinates(this.bottomLevelX, 0), window.root, 0, false);
 	};
 
-	this.paintPage = function(x, y, page) {
+	this.paintPage = function (coordinates, page, level, isBottomLevel) {
+
+		var coordinates = this.paintChildren(coordinates, page, level+1);
+
+		if (isBottomLevel) {
+			coordinates.x = this.bottomLevelX;
+			coordinates.y = level*60 + 20;
+			this.bottomLevelX = this.bottomLevelX + 100;
+		}
+
 		var width = 100;
 		$("canvas").drawImage({
 			source: "bg2-ghost.jpg",
-			x: x, y: y,
+			x: coordinates.x, y: coordinates.y,
 			width: width,
 			height: width / 5 * 2,
 			fromCenter: false
 		});
+		page.coordinates = new Coordinates(coordinates.x, coordinates.y);
 
-		this.paintNumbers(x, y, page);
-		this.paintChildren(x, y, page);
-		this.paintConnectors(x, y, page);
+		this.paintNumbers(page);
+		this.paintConnectors(page);
+
+		return coordinates;
 	};
 
-	this.paintNumbers = function(x, y, page) {
-		x = x + 15;
-		y = y + 20;
+	this.paintChildren = function (coordinates, page, level) {
+
+		var isBottomLevel = level == this.treeDepth;
+
+		var minX = coordinates.x;
+		$(page.links).each(function (key, link) {
+			coordinates = window.painter.paintPage(coordinates, link, level, isBottomLevel);
+		});
+		var maxX = coordinates.x+100;
+
+		return new Coordinates((maxX-minX)/2-30, (level-1)*60+20);
+	};
+
+	this.paintNumbers = function(page) {
+		x = page.coordinates.x + 15;
+		y = page.coordinates.y + 20;
 		var offset = 33;
 
 		$(page.elements).each(function (key, value) {
@@ -38,34 +72,27 @@ function Painter() {
 		})
 	};
 
-	this.paintChildren = function (x, y, page) {
-		x = x - 100;
-		y = y + 60;
-		var offset = 100;
-
-		$(page.links).each(function (key, link) {
-			window.painter.paintPage(x, y, link);
-			x = x + offset;
-		});
-	};
-
-	this.paintConnectors = function (x, y, page) {
-		xStart = x + 3;
-		yStart = y + 37;
-		xEnd= x - 69;
-		yEnd= y + 63;
+	this.paintConnectors = function (page) {
+		var x = page.coordinates.x + 3;
+		var y = page.coordinates.y + 37;
 		var startOffset = 29;
-		var endOffset = 101;
 
 		$(page.links).each(function (key, link) {
 			$('canvas').drawLine({
 				strokeStyle: '#70c1ef',
 				strokeWidth: 2,
-				x1: xStart, y1: yStart,
-				x2: xEnd, y2: yEnd
+				x1: x, y1: y,
+				x2: link.coordinates.x+33, y2: link.coordinates.y+3
 			});
-			xStart = xStart + startOffset;
-			xEnd = xEnd + endOffset;
+			x = x + startOffset;
 		});
 	};
+
+	this.setTreeDepth = function() {
+		var p = window.root;
+		for (this.treeDepth = 0; true; this.treeDepth++) {
+			if (p.links.length == 0) break;
+			p = p.links[0];
+		}
+	}
 }
