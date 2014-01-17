@@ -22,6 +22,7 @@ function Page () {
 				found = true;
 				return false;
 			}
+			return true;
 		}.bind(this));
 
 		if (!found) {
@@ -36,34 +37,13 @@ function Page () {
 		var middle = parseInt(this.maxElementCount / 2);
 		var middleValue = this.elements[middle];
 
-		var left = new Page();
-		for (var i=0; i < middle; i++) {
-			left.elements[i] = this.elements[i];
-			if (this.links[i] != undefined) {
-				left.links[i] = this.links[i];
-			}
-		}
-		if (this.links[middle] != undefined) {
-			left.links[middle] = this.links[middle];
-		}
-
-		var right = new Page();
-		var j = 0;
-		for (var i=middle+1; i < this.maxElementCount+1; i++) {
-			right.elements[j] = this.elements[i];
-			if (this.links[i] != undefined) {
-				right.links[j] = this.links[i];
-			}
-			j++;
-		}
-		if (this.links[this.maxElementCount] != undefined) {
-			right.links[this.maxElementCount] = this.links[this.maxElementCount];
-		}
+		var left = this.createLeft(middle);
+		var right = this.createRight(middle);
 
 		// If this is the root, create new root element.
 		if (this.parent == undefined) {
 			var newParent = new Page();
-			newParent.insert(middleValue)
+			newParent.insert(middleValue);
 			newParent.addLink(0, left);
 			newParent.addLink(1, right);
 
@@ -74,10 +54,10 @@ function Page () {
 		// Else add the middle element to the parent.
 		} else {
 			var newParentElements = [];
-			var newParentLinks = []
+			var newParentLinks = [];
 			var found = false;
 
-			$(this.parent.elements).each(function(key, value) {
+			$(this.parent.elements).each(function (key, value) {
 				if (!found && middleValue < value) {
 					newParentElements.push(middleValue);
 					newParentLinks.push(left);
@@ -85,26 +65,62 @@ function Page () {
 					found = true;
 				}
 				newParentElements.push(value);
-				newParentLinks.push(this.parent.links[(found?key+1:key)]);
+				newParentLinks.push(this.parent.links[(found ? key + 1 : key)]);
 			}.bind(this));
 
 			if (!found) {
 				newParentElements.push(middleValue);
-				i = newParentElements.length;
-				newParentLinks[i-1] = left;
+				var i = newParentElements.length;
+				newParentLinks[i - 1] = left;
 				newParentLinks[i] = right;
 			}
+			left.parent = this.parent;
+			right.parent = this.parent;
 			this.parent.elements = newParentElements;
 			this.parent.links = newParentLinks;
 			this.parent.handleOverflow();
 		}
-	}
+	};
+
+	this.createLeft = function (middle) {
+		var left = new Page();
+		for (var i = 0; i < middle; i++) {
+			left.elements[i] = this.elements[i];
+			if (this.links[i] != undefined) {
+				left.links[i] = this.links[i];
+				left.links[i].parent = left;
+			}
+		}
+		if (this.links[middle] != undefined) {
+			left.links[middle] = this.links[middle];
+			left.links[middle].parent = left;
+		}
+		return left;
+	};
+
+	this.createRight = function (middle) {
+		var right = new Page();
+		var j = 0;
+		for (var i = middle + 1; i < this.maxElementCount + 1; i++) {
+			right.elements[j] = this.elements[i];
+			if (this.links[i] != undefined) {
+				right.links[j] = this.links[i];
+				right.links[j].parent = right;
+			}
+			j++;
+		}
+		if (this.links[this.maxElementCount+1] != undefined) {
+			right.links[j] = this.links[this.maxElementCount+1];
+			right.links[j].parent = right;
+		}
+		return right;
+	};
 
 	this.insertHere = function (n) {
 		this.elements.push(n);
 		this.elements.sort(function(a,b){return a-b});
 		this.handleOverflow();
-	}
+	};
 
 	this.addLink = function (position, page) {
 		this.links[position] = page;
@@ -116,7 +132,7 @@ function Page () {
 
 	this.hasOverflow = function () {
 		return this.elements.length == this.maxElementCount+1;
-	}
+	};
 
 	this.setParent = function (parent) {
 		this.parent = parent;

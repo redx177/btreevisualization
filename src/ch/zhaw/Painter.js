@@ -11,16 +11,15 @@ function Painter() {
 	this.paintRoot = function() {
 		$("canvas").clearCanvas();
 		this.setTreeDepth();
-		this.paintPage(new Coordinates(this.bottomLevelX, 0), window.root, 0, false);
+		this.paintPage(window.root, 0, false);
 	};
 
-	this.paintPage = function (coordinates, page, level, isBottomLevel) {
+	this.paintPage = function (page, level, isBottomLevel) {
 
-		var coordinates = this.paintChildren(coordinates, page, level+1);
+		var coordinates = this.paintChildren(page, level+1);
 
 		if (isBottomLevel) {
-			coordinates.x = this.bottomLevelX;
-			coordinates.y = level*60 + 20;
+			coordinates = new Coordinates(this.bottomLevelX, level*60 + 20);
 			this.bottomLevelX = this.bottomLevelX + 100;
 		}
 
@@ -40,22 +39,32 @@ function Painter() {
 		return coordinates;
 	};
 
-	this.paintChildren = function (coordinates, page, level) {
+	this.paintChildren = function (page, level) {
 
 		var isBottomLevel = level == this.treeDepth;
 
-		var minX = coordinates.x;
+		var coordinates = undefined;
+		var first = true;
+		var minX = 0;
 		$(page.links).each(function (key, link) {
-			coordinates = window.painter.paintPage(coordinates, link, level, isBottomLevel);
-		});
-		var maxX = coordinates.x+100;
+			coordinates = this.paintPage(link, level, isBottomLevel);
+			if (first) {
+				minX = coordinates.x;
+				first = false;
+			}
+		}.bind(this));
 
-		return new Coordinates((maxX-minX)/2-30, (level-1)*60+20);
+		if (coordinates != undefined) {
+			var maxX = coordinates.x+100;
+			return new Coordinates(((maxX-minX)/2-30)+minX, (level-1)*60+20);
+		}
+
+		return undefined;
 	};
 
 	this.paintNumbers = function(page) {
-		x = page.coordinates.x + 15;
-		y = page.coordinates.y + 20;
+		var x = page.coordinates.x + 15;
+		var y = page.coordinates.y + 20;
 		var offset = 33;
 
 		$(page.elements).each(function (key, value) {
