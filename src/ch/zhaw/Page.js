@@ -27,7 +27,7 @@ function Page () {
 		n = parseInt(n);
 		var page = this.find(n);
 		if (page.isALeaf()) {
-			page.deleteOnLeave(n);
+			page.deleteHere(n);
 			if (page.hasUnderflow()) {
 				if (!page.handleLeaveUnderflowWithNeighbours(n)) {
 					page.handleLeaveUnderflowByConcatenation(n)
@@ -66,17 +66,25 @@ function Page () {
 		return undefined;
 	};
 
-	this.deleteOnLeave = function (n) {
+	this.deleteHere = function (n) {
 		var found = false;
 		for (var i = 0; i < this.maxElementCount; i++) {
 			var j = found ? i-1 : i;
 			this.elements[j] = this.elements[i];
+			if (this.links[i] != undefined) {
+				this.links[j] = this.links[i];
+			}
 
 			if (this.elements[i] == n) {
 				found = true;
 			}
 		}
 		this.elements.pop();
+
+		if (this.links[this.maxElementCount] != undefined) {
+			this.links[this.maxElementCount-1] = this.links[this.maxElementCount];
+		}
+		this.links.pop();
 	};
 
 	this.insertOnChild = function (n) {
@@ -182,7 +190,7 @@ function Page () {
 	};
 
 	this.getLeftNeighbour = function (n) {
-		for (var i = 0; i < this.elements.length; i++) {
+		for (var i = this.elements.length-1; i >= 0; i--) {
 			if (this.elements[i] < n) {
 				return this.links[i];
 			}
@@ -252,17 +260,30 @@ function Page () {
 		var neighbourToMerge;
 
 		// Concatenate with right neighbour.
-		if (this.parent.elements[0] < n) {
-			neighbourToMerge = this.getRightNeighbour(n);
-			elementToPullFromParent
+		if (this.parent.elements[0] > n) {
+			neighbourToMerge = this.parent.getRightNeighbour(n);
+			elementToPullFromParent = this.getLeftIndexOnParent(n);
 
 		// Concatenate with left neighbour.
 		} else {
-			neighbourToMerge = this.getLeftNeighbour(n);
-
+			neighbourToMerge = this.parent.getLeftNeighbour(n);
+			elementToPullFromParent = this.getRightIndexOnParent(n);
 		}
 
+		var elementForMe = this.parent.elements[elementToPullFromParent];
+		this.parent.deleteHere(elementForMe);
 
+		var mergedPage = new Page();
+		$(this.elements).each(function(key, value) {
+			mergedPage.insert(value);
+		});
+		$(neighbourToMerge.elements).each(function(key, value) {
+			mergedPage.insert(value);
+		});
+		mergedPage.insert(elementForMe);
+		mergedPage.parent = this.parent;
+
+		this.parent.links[elementToPullFromParent] = mergedPage;
 	};
 
 	this.insertHere = function (n) {
