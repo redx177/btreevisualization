@@ -3,7 +3,6 @@ function Page () {
 	this.elements = [];
 	this.links = [];
 	this.parent = undefined;
-	this.coordinates = undefined;
 
 	this.insert = function(n) {
 		n = parseInt(n);
