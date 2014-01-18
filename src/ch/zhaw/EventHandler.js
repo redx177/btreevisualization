@@ -29,4 +29,8 @@ $(function() {
 		window.painter.paintRoot();
 		deleteField.val("").focus();
 	});
+
+	$("#clearButton").click(function() {
+		window.painter.clear();
+	});
 });

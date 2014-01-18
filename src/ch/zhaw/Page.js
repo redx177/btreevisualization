@@ -1,20 +1,137 @@
 function Page () {
-	this.maxElementCount = 2;
+	this.minElementCount = 1;
+	this.maxElementCount = 2*this.minElementCount;
 	this.elements = [];
 	this.links = [];
 	this.parent = undefined;
 
+	/**
+	 * Inserts the number n.
+	 * @param n Number to insert.
+	 */
 	this.insert = function(n) {
 		n = parseInt(n);
 		if (this.hasChildren()) {
 			this.insertOnChild(n);
 		} else {
 			this.insertHere(n);
+			this.handleOverflow();
 		}
 	};
 
-	this.delete = function(n) {
+	this.getLeftNeighbour = function (n) {
+		for (i = 0; i < this.elements.length; i++) {
+			if (this.elements[i] < n) {
+				return this.links[i];
+			}
+		}
+	};
 
+	this.getRightNeighbour = function (n) {
+		for (i = 0; i < this.elements.length; i++) {
+			if (this.elements[i] > n) {
+				return this.links[i+1];
+			}
+		}
+	};
+
+	this.handleLeaveUnderflowWithNeighbours = function (n) {
+		// Check if an element from the left neighbour can be stolen.
+		var leftNeighbour = this.parent.getLeftNeighbour(n);
+		if (leftNeighbour != undefined && leftNeighbour.elements.length > this.minElementCount) {
+			var elementForParent = leftNeighbour.elements[leftNeighbour.elements.length-1];
+			var elementForMe = 0;
+			leftNeighbour.delete(elementForParent);
+			for (var i = 0; i < this.parent.elements.length; i++) {
+				if (this.parent.elements[i] > elementForParent) {
+					elementForMe = this.parent.elements[i];
+					this.parent.elements[i] = elementForParent;
+					break;
+				}
+			}
+
+			this.insert(elementForMe);
+			return true;
+		}
+
+		// Check if an element from the right neighbour can be stolen.
+		var rightNeighbour = this.parent.getRightNeighbour(n);
+		if (rightNeighbour != undefined && rightNeighbour.elements.length > this.minElementCount) {
+			var elementForParent = rightNeighbour.elements[0];
+			var elementForMe = 0;
+			rightNeighbour.delete(elementForParent);
+			for (var i = this.parent.elements.length-1; i >= 0; i--) {
+				if (this.parent.elements[i] < elementForParent) {
+					elementForMe = this.parent.elements[i];
+					this.parent.elements[i] = elementForParent;
+					break;
+				}
+			}
+
+			this.insert(elementForMe);
+			return true;
+		}
+
+		// No excessive elements on neighbours available.
+		return false;
+	};
+
+	/**
+	 * Deletes the n lowest to the bottom.
+	 * @param n Number to delete.
+	 */
+	this.delete = function(n) {
+		n = parseInt(n);
+		var page = this.find(n);
+		if (page.isALeaf()) {
+			page.deleteOnLeave(n);
+			if (page.hasUnderflow()) {
+				page.handleLeaveUnderflowWithNeighbours(n);
+			}
+		}
+	};
+	/**
+	 * Finds the number n.
+	 * It first goes to the buttom and then searches up.
+	 *
+	 * @param n Number to find.
+	 * @returns {*} DisplayPage that contains the number n. If not found: undefined
+	 */
+	this.find = function(n) {
+		var subPage;
+		for (var i = 0; i < this.elements.length; i++) {
+			if (this.links[i] != undefined) {
+				subPage = this.links[i].find(n);
+				if (subPage != undefined) {
+					return subPage;
+				}
+			}
+
+			if (this.elements[i] == n) {
+				return this;
+			}
+		}
+		if (this.links[this.elements.length] != undefined) {
+			subPage = this.links[this.elements.length].find(n);
+			if (subPage != undefined) {
+				return subPage;
+			}
+		}
+
+		return undefined;
+	};
+
+	this.deleteOnLeave = function (n) {
+		var found = false;
+		for (var i = 0; i < this.maxElementCount; i++) {
+			var j = found ? i-1 : i;
+			this.elements[j] = this.elements[i];
+
+			if (this.elements[i] == n) {
+				found = true;
+			}
+		}
+		this.elements.pop();
 	};
 
 	this.insertOnChild = function (n) {
@@ -51,8 +168,8 @@ function Page () {
 			newParent.addLink(1, right);
 
 			window.root = newParent;
-			left.setParent(newParent);
-			right.setParent(newParent);
+			left.parent = newParent;
+			right.parent = newParent;
 
 		// Else add the middle element to the parent.
 		} else {
@@ -122,7 +239,6 @@ function Page () {
 	this.insertHere = function (n) {
 		this.elements.push(n);
 		this.elements.sort(function(a,b){return a-b});
-		this.handleOverflow();
 	};
 
 	this.addLink = function (position, page) {
@@ -134,10 +250,14 @@ function Page () {
 	};
 
 	this.hasOverflow = function () {
-		return this.elements.length == this.maxElementCount+1;
+		return this.elements.length > this.maxElementCount;
 	};
 
-	this.setParent = function (parent) {
-		this.parent = parent;
+	this.hasUnderflow = function () {
+		return this.elements.length < this.minElementCount;
 	};
+
+	this.isALeaf = function() {
+		return this.links.length == 0;
+	}
 }

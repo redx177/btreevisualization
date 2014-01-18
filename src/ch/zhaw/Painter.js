@@ -14,11 +14,16 @@ function Painter() {
 		this.bottomLevelX = 20;
 	};
 
+	this.clear = function() {
+		$("canvas").clearCanvas();
+		window.root = new Page();
+	}
+
 	this.paintPage = function (displayPage) {
 
 		var coordinates = this.paintChildren(displayPage);
 
-		if (displayPage.isOnBottomLevel) {
+		if (displayPage.isALeaf()) {
 			coordinates = new Coordinates(this.bottomLevelX, displayPage.level*60 + 20);
 			this.bottomLevelX = this.bottomLevelX + 100;
 		}
@@ -96,7 +101,7 @@ function Painter() {
 	};
 
 	this.prepareTree = function (page, level) {
-		var displayPage = new DisplayPage(page.elements, page.parent, level, page.links.length == 0);
+		var displayPage = new DisplayPage(page.elements, page.parent, level);
 		$(page.links).each(function(key, link) {
 			displayPage.links.push(this.prepareTree(link, level+1));
 		}.bind(this));
