@@ -11,12 +11,16 @@ function Painter() {
 	this.paintRoot = function() {
 		$("canvas").clearCanvas();
 		this.setTreeDepth();
-		this.paintPage(window.root, 0, false);
+		this.paintPage(window.root, 0);
+		//this.paintChildren(window.root, 0);
+		this.bottomLevelX = 20;
 	};
 
-	this.paintPage = function (page, level, isBottomLevel) {
+	this.paintPage = function (page, level) {
 
 		var coordinates = this.paintChildren(page, level+1);
+
+		var isBottomLevel = level == this.treeDepth;
 
 		if (isBottomLevel) {
 			coordinates = new Coordinates(this.bottomLevelX, level*60 + 20);
@@ -41,13 +45,11 @@ function Painter() {
 
 	this.paintChildren = function (page, level) {
 
-		var isBottomLevel = level == this.treeDepth;
-
 		var coordinates = undefined;
 		var first = true;
 		var minX = 0;
 		$(page.links).each(function (key, link) {
-			coordinates = this.paintPage(link, level, isBottomLevel);
+			coordinates = this.paintPage(link, level);
 			if (first) {
 				minX = coordinates.x;
 				first = false;
