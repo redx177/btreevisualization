@@ -19,63 +19,6 @@ function Page () {
 		}
 	};
 
-	this.getLeftNeighbour = function (n) {
-		for (i = 0; i < this.elements.length; i++) {
-			if (this.elements[i] < n) {
-				return this.links[i];
-			}
-		}
-	};
-
-	this.getRightNeighbour = function (n) {
-		for (i = 0; i < this.elements.length; i++) {
-			if (this.elements[i] > n) {
-				return this.links[i+1];
-			}
-		}
-	};
-
-	this.handleLeaveUnderflowWithNeighbours = function (n) {
-		// Check if an element from the left neighbour can be stolen.
-		var leftNeighbour = this.parent.getLeftNeighbour(n);
-		if (leftNeighbour != undefined && leftNeighbour.elements.length > this.minElementCount) {
-			var elementForParent = leftNeighbour.elements[leftNeighbour.elements.length-1];
-			var elementForMe = 0;
-			leftNeighbour.delete(elementForParent);
-			for (var i = 0; i < this.parent.elements.length; i++) {
-				if (this.parent.elements[i] > elementForParent) {
-					elementForMe = this.parent.elements[i];
-					this.parent.elements[i] = elementForParent;
-					break;
-				}
-			}
-
-			this.insert(elementForMe);
-			return true;
-		}
-
-		// Check if an element from the right neighbour can be stolen.
-		var rightNeighbour = this.parent.getRightNeighbour(n);
-		if (rightNeighbour != undefined && rightNeighbour.elements.length > this.minElementCount) {
-			var elementForParent = rightNeighbour.elements[0];
-			var elementForMe = 0;
-			rightNeighbour.delete(elementForParent);
-			for (var i = this.parent.elements.length-1; i >= 0; i--) {
-				if (this.parent.elements[i] < elementForParent) {
-					elementForMe = this.parent.elements[i];
-					this.parent.elements[i] = elementForParent;
-					break;
-				}
-			}
-
-			this.insert(elementForMe);
-			return true;
-		}
-
-		// No excessive elements on neighbours available.
-		return false;
-	};
-
 	/**
 	 * Deletes the n lowest to the bottom.
 	 * @param n Number to delete.
@@ -86,7 +29,9 @@ function Page () {
 		if (page.isALeaf()) {
 			page.deleteOnLeave(n);
 			if (page.hasUnderflow()) {
-				page.handleLeaveUnderflowWithNeighbours(n);
+				if (!page.handleLeaveUnderflowWithNeighbours(n)) {
+					page.handleLeaveUnderflowByConcatenation(n)
+				}
 			}
 		}
 	};
@@ -234,6 +179,90 @@ function Page () {
 			right.links[j].parent = right;
 		}
 		return right;
+	};
+
+	this.getLeftNeighbour = function (n) {
+		for (var i = 0; i < this.elements.length; i++) {
+			if (this.elements[i] < n) {
+				return this.links[i];
+			}
+		}
+		return undefined;
+	};
+
+	this.getRightNeighbour = function (n) {
+		for (var i = 0; i < this.elements.length; i++) {
+			if (this.elements[i] > n) {
+				return this.links[i+1];
+			}
+		}
+		return undefined;
+	};
+
+	this.getLeftIndexOnParent = function(n) {
+		for (var i = 0; i < this.parent.elements.length; i++) {
+			if (this.parent.elements[i] > n) {
+				return i;
+			}
+		}
+		return undefined;
+	}
+
+	this.getRightIndexOnParent = function(n) {
+		for (i = this.parent.elements.length-1; i >= 0; i--) {
+			if (this.parent.elements[i] < n) {
+				return i;
+			}
+		}
+		return undefined;
+	}
+
+	this.handleLeaveUnderflowWithNeighbours = function (n) {
+		var elementForParent;
+		var elementToPullFromParent;
+
+		// Check if an element from the left neighbour can be stolen.
+		var neighbour = this.parent.getLeftNeighbour(n);
+		if (neighbour != undefined && neighbour.elements.length > this.minElementCount) {
+			elementForParent = neighbour.elements[neighbour.elements.length-1];
+			elementToPullFromParent = this.getLeftIndexOnParent(elementForParent);
+		} else {
+			// Check if an element from the right neighbour can be stolen.
+			neighbour = this.parent.getRightNeighbour(n);
+			if (neighbour != undefined && neighbour.elements.length > this.minElementCount) {
+				elementForParent = neighbour.elements[0];
+				elementToPullFromParent = this.getRightIndexOnParent(elementForParent);
+
+			} else {
+				// No excessive elements on neighbours available.
+				return false;
+			}
+		}
+
+		var elementForMe = this.parent.elements[elementToPullFromParent];
+		neighbour.delete(elementForParent);
+		this.parent.elements[elementToPullFromParent] = elementForParent;
+		this.insert(elementForMe);
+
+		return true;
+	};
+
+	this.handleLeaveUnderflowByConcatenation = function (n) {
+		var elementToPullFromParent = 0;
+		var neighbourToMerge;
+
+		// Concatenate with right neighbour.
+		if (this.parent.elements[0] < n) {
+			neighbourToMerge = this.getRightNeighbour(n);
+			elementToPullFromParent
+
+		// Concatenate with left neighbour.
+		} else {
+			neighbourToMerge = this.getLeftNeighbour(n);
+
+		}
+
+
 	};
 
 	this.insertHere = function (n) {
