@@ -14,6 +14,10 @@ function Page () {
 		}
 	};
 
+	this.delete = function(n) {
+
+	};
+
 	this.insertOnChild = function (n) {
 		var found = false;
 		$(this.elements).each(function(key, value){
