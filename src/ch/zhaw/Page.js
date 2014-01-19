@@ -28,13 +28,10 @@ function Page () {
 		var page = this.find(n);
 		if (page.isALeaf()) {
 			page.deleteHere(n);
-			if (page.hasUnderflow()) {
-				if (!page.handleLeaveUnderflowWithNeighbours(n)) {
-					page.handleLeaveUnderflowByConcatenation(n)
-				}
-			}
+			page.handleUnderflow(n);
 		}
 	};
+
 	/**
 	 * Finds the number n.
 	 * It first goes to the buttom and then searches up.
@@ -66,7 +63,28 @@ function Page () {
 		return undefined;
 	};
 
+	this.handleUnderflow = function(n) {
+		if (this.hasUnderflow()) {
+			if (!this.handleUnderflowWithNeighbours(n)) {
+				this.handleUnderflowWithMerging(n)
+			}
+		}
+	}
+
 	this.deleteHere = function (n) {
+		var found = false;
+		for (var i = 0; i < this.maxElementCount; i++) {
+			var j = found ? i-1 : i;
+			this.elements[j] = this.elements[i];
+
+			if (this.elements[i] == n) {
+				found = true;
+			}
+		}
+		this.elements.pop();
+	};
+
+	this.deleteHereAndRemoveMiddleLink = function (n) {
 		var found = false;
 		for (var i = 0; i < this.maxElementCount; i++) {
 			var j = found ? i-1 : i;
@@ -225,7 +243,7 @@ function Page () {
 		return undefined;
 	}
 
-	this.handleLeaveUnderflowWithNeighbours = function (n) {
+	this.handleUnderflowWithNeighbours = function (n) {
 		var elementForParent;
 		var elementToPullFromParent;
 
@@ -247,43 +265,105 @@ function Page () {
 			}
 		}
 
+		// Rotate
+		// 1. Put node from neighbour to parent.
+		// 2. Put node from parent to me.
 		var elementForMe = this.parent.elements[elementToPullFromParent];
-		neighbour.delete(elementForParent);
+		neighbour.deleteHere(elementForParent);
 		this.parent.elements[elementToPullFromParent] = elementForParent;
-		this.insert(elementForMe);
+		this.insertHere(elementForMe);
 
 		return true;
 	};
 
-	this.handleLeaveUnderflowByConcatenation = function (n) {
-		var elementToPullFromParent = 0;
-		var neighbourToMerge;
+	this.fixAfterDelete = function (n) {
+		// Is there an error?
 
-		// Concatenate with right neighbour.
-		if (this.parent.elements[0] > n) {
-			neighbourToMerge = this.parent.getRightNeighbour(n);
-			elementToPullFromParent = this.getLeftIndexOnParent(n);
+		if (this.links.length > 0 && this.links.length <= this.minElementCount) {
+			// Can an element be stolen from the left sibling?
+			var leftNeighbour = this.parent.getLeftNeighbour(n);
 
-		// Concatenate with left neighbour.
-		} else {
-			neighbourToMerge = this.parent.getLeftNeighbour(n);
-			elementToPullFromParent = this.getRightIndexOnParent(n);
+			if (leftNeighbour != undefined && leftNeighbour.elements.length > this.minElementCount) {
+				this.handleUnderflowWithNeighbours(n);
+				this.links[1] = this.links[0];
+				this.links[0] = leftNeighbour.links.pop();
+				return;
+			}
+			// Can an element be stolen from the right sibling?
+			// ...
+
+			// Merge
+			var neighbourToMerge = this.getNeighbourToMerge(n);
+
+			var elementIndexToPullFromParent = this.getElementIndexToPullFromParent(n);
+			var elementForMe = this.parent.elements[elementIndexToPullFromParent];
+
+			this.parent.deleteHereAndRemoveMiddleLink(elementForMe);
+			var mergedPage = this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
+
+			this.fixLinksAfterRotate(mergedPage, neighbourToMerge, elementForMe, elementIndexToPullFromParent);
 		}
+	};
 
-		var elementForMe = this.parent.elements[elementToPullFromParent];
-		this.parent.deleteHere(elementForMe);
+	this.fixLinksAfterRotate = function (mergedPage, neighbourToMerge, elementForMe, elementIndexToPullFromParent) {
+		window.painter.paintRoot();
 
+		if (this.links[0].elements[0] < neighbourToMerge.links[0].elements[0]) {
+			$(this.links).each(function(key, link) {
+				mergedPage.links.push(link);
+				link.parent = mergedPage;
+			});
+
+			$(neighbourToMerge.links).each(function(key, link) {
+				mergedPage.links.push(link);
+				link.parent = mergedPage;
+			});
+		} else {
+			$(neighbourToMerge.links).each(function(key, link) {
+				mergedPage.links.push(link);
+				link.parent = mergedPage;
+			});
+
+			$(this.links).each(function(key, link) {
+				mergedPage.links.push(link);
+				link.parent = mergedPage;
+			});
+		}
+	};
+
+	this.getNeighbourToMerge = function(n) {
+		return (this.parent.elements[0] > n) ? this.parent.getRightNeighbour(n) : this.parent.getLeftNeighbour(n);
+	};
+
+	this.getElementIndexToPullFromParent = function(n) {
+		return (this.parent.elements[0] > n) ? this.getLeftIndexOnParent(n) : this.getRightIndexOnParent(n);
+	};
+
+	this.rotate = function (neighbourToMerge, elementForMe, elementIndexToPullFromParent) {
 		var mergedPage = new Page();
-		$(this.elements).each(function(key, value) {
+		$(this.elements).each(function (key, value) {
 			mergedPage.insert(value);
 		});
-		$(neighbourToMerge.elements).each(function(key, value) {
+		$(neighbourToMerge.elements).each(function (key, value) {
 			mergedPage.insert(value);
 		});
 		mergedPage.insert(elementForMe);
 		mergedPage.parent = this.parent;
 
-		this.parent.links[elementToPullFromParent] = mergedPage;
+		this.parent.links[elementIndexToPullFromParent] = mergedPage;
+		return mergedPage;
+	};
+
+	this.handleUnderflowWithMerging = function (n) {
+		var neighbourToMerge = this.getNeighbourToMerge(n);
+		var elementIndexToPullFromParent = this.getElementIndexToPullFromParent(n);
+
+		var elementForMe = this.parent.elements[elementIndexToPullFromParent];
+		this.parent.deleteHereAndRemoveMiddleLink(elementForMe);
+
+		this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
+
+		this.parent.fixAfterDelete(n);
 	};
 
 	this.insertHere = function (n) {
