@@ -19,6 +19,21 @@ function Page () {
 		}
 	};
 
+	this.deleteOnInnerNode = function (n) {
+		p = this.links[0];
+		while (p.links[p.links.length-1] != undefined) {
+			p = p.links[p.links.length-1];
+		}
+		var nextLowerElementToN = p.elements[p.elements.length-1];
+		for (var i = 0; i < this.elements.length; i++) {
+			if (this.elements[i] == n) {
+				this.elements[i] = nextLowerElementToN;
+				break;
+			}
+		}
+		this.delete(nextLowerElementToN);
+	};
+
 	/**
 	 * Deletes the n lowest to the bottom.
 	 * @param n Number to delete.
@@ -29,6 +44,8 @@ function Page () {
 		if (page.isALeaf()) {
 			page.deleteHere(n);
 			page.handleUnderflow(n);
+		} else {
+			page.deleteOnInnerNode(n);
 		}
 	};
 
@@ -218,7 +235,7 @@ function Page () {
 
 	this.getRightNeighbour = function (n) {
 		for (var i = 0; i < this.elements.length; i++) {
-			if (this.elements[i] > n) {
+			if (this.elements[i] >= n) {
 				return this.links[i+1];
 			}
 		}
@@ -236,7 +253,7 @@ function Page () {
 
 	this.getRightIndexOnParent = function(n) {
 		for (i = this.parent.elements.length-1; i >= 0; i--) {
-			if (this.parent.elements[i] < n) {
+			if (this.parent.elements[i] <= n) {
 				return i;
 			}
 		}
@@ -276,21 +293,48 @@ function Page () {
 		return true;
 	};
 
+	this.handleUnderflowWithMerging = function (n) {
+		var neighbourToMerge = this.getNeighbourToMerge(n);
+		var elementIndexToPullFromParent = this.getElementIndexToPullFromParent(n);
+
+		var elementForMe = this.parent.elements[elementIndexToPullFromParent];
+		this.parent.deleteHereAndRemoveMiddleLink(elementForMe);
+
+		var mergedPage = this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
+
+		window.painter.paintRoot();
+
+		if (this.isALeaf()) {
+			this.parent.fixAfterDelete(n);
+		} else {
+			this.fixLinksAfterRotate(mergedPage, neighbourToMerge);
+		}
+	};
+
 	this.fixAfterDelete = function (n) {
 		// Is there an error?
 
-		if (this.links.length > 0 && this.links.length <= this.minElementCount) {
+		//if (this.links.length > 0 && this.links.length <= this.minElementCount) {
+		if (this.elements.length < this.minElementCount) {
 			// Can an element be stolen from the left sibling?
 			var leftNeighbour = this.parent.getLeftNeighbour(n);
-
 			if (leftNeighbour != undefined && leftNeighbour.elements.length > this.minElementCount) {
 				this.handleUnderflowWithNeighbours(n);
 				this.links[1] = this.links[0];
 				this.links[0] = leftNeighbour.links.pop();
 				return;
 			}
+
 			// Can an element be stolen from the right sibling?
-			// ...
+			var rightNeighbour = this.parent.getRightNeighbour(n);
+			if (rightNeighbour != undefined && rightNeighbour.elements.length > this.minElementCount) {
+				this.handleUnderflowWithNeighbours(n);
+				window.painter.paintRoot();
+				var p = rightNeighbour.links.shift();
+				p.parent = this;
+				this.links.push(p);
+				return;
+			}
 
 			// Merge
 			var neighbourToMerge = this.getNeighbourToMerge(n);
@@ -301,13 +345,11 @@ function Page () {
 			this.parent.deleteHereAndRemoveMiddleLink(elementForMe);
 			var mergedPage = this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
 
-			this.fixLinksAfterRotate(mergedPage, neighbourToMerge, elementForMe, elementIndexToPullFromParent);
+			this.fixLinksAfterRotate(mergedPage, neighbourToMerge);
 		}
 	};
 
-	this.fixLinksAfterRotate = function (mergedPage, neighbourToMerge, elementForMe, elementIndexToPullFromParent) {
-		window.painter.paintRoot();
-
+	this.fixLinksAfterRotate = function (mergedPage, neighbourToMerge) {
 		if (this.links[0].elements[0] < neighbourToMerge.links[0].elements[0]) {
 			$(this.links).each(function(key, link) {
 				mergedPage.links.push(link);
@@ -329,10 +371,15 @@ function Page () {
 				link.parent = mergedPage;
 			});
 		}
+
+		if (mergedPage.parent.elements.length == 0) {
+			mergedPage.parent = undefined;
+			window.root = mergedPage;
+		}
 	};
 
 	this.getNeighbourToMerge = function(n) {
-		return (this.parent.elements[0] > n) ? this.parent.getRightNeighbour(n) : this.parent.getLeftNeighbour(n);
+		return (this.parent.elements[0] >= n) ? this.parent.getRightNeighbour(n) : this.parent.getLeftNeighbour(n);
 	};
 
 	this.getElementIndexToPullFromParent = function(n) {
@@ -352,18 +399,6 @@ function Page () {
 
 		this.parent.links[elementIndexToPullFromParent] = mergedPage;
 		return mergedPage;
-	};
-
-	this.handleUnderflowWithMerging = function (n) {
-		var neighbourToMerge = this.getNeighbourToMerge(n);
-		var elementIndexToPullFromParent = this.getElementIndexToPullFromParent(n);
-
-		var elementForMe = this.parent.elements[elementIndexToPullFromParent];
-		this.parent.deleteHereAndRemoveMiddleLink(elementForMe);
-
-		this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
-
-		this.parent.fixAfterDelete(n);
 	};
 
 	this.insertHere = function (n) {
