@@ -1,7 +1,8 @@
+
+this.continue = false;
+
 $(function() {
-	if (window.root == undefined) {
-		window.root = new Page();
-	}
+	window.root = new Page();
 	window.painter = new Painter();
 
 	$('#insertText').keypress(function (e) {
@@ -32,5 +33,13 @@ $(function() {
 
 	$("#clearButton").click(function() {
 		window.painter.clear();
+	});
+
+	$("#clearButton").click(function() {
+		window.painter.clear();
+	});
+
+	$("#step").click(function() {
+		window.continue = true;
 	});
 });

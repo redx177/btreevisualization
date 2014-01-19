@@ -19,21 +19,6 @@ function Page () {
 		}
 	};
 
-	this.deleteOnInnerNode = function (n) {
-		p = this.links[0];
-		while (p.links[p.links.length-1] != undefined) {
-			p = p.links[p.links.length-1];
-		}
-		var nextLowerElementToN = p.elements[p.elements.length-1];
-		for (var i = 0; i < this.elements.length; i++) {
-			if (this.elements[i] == n) {
-				this.elements[i] = nextLowerElementToN;
-				break;
-			}
-		}
-		this.delete(nextLowerElementToN);
-	};
-
 	/**
 	 * Deletes the n lowest to the bottom.
 	 * @param n Number to delete.
@@ -86,7 +71,7 @@ function Page () {
 				this.handleUnderflowWithMerging(n)
 			}
 		}
-	}
+	};
 
 	this.deleteHere = function (n) {
 		var found = false;
@@ -99,6 +84,21 @@ function Page () {
 			}
 		}
 		this.elements.pop();
+	};
+
+	this.deleteOnInnerNode = function (n) {
+		var p = this.links[this.elements.indexOf(n)];
+		while (p.links[p.links.length-1] != undefined) {
+			p = p.links[p.links.length-1];
+		}
+		var nextLowerElementToN = p.elements[p.elements.length-1];
+		for (var i = 0; i < this.elements.length; i++) {
+			if (this.elements[i] == n) {
+				this.elements[i] = nextLowerElementToN;
+				break;
+			}
+		}
+		this.delete(nextLowerElementToN);
 	};
 
 	this.deleteHereAndRemoveMiddleLink = function (n) {
@@ -159,7 +159,7 @@ function Page () {
 			left.parent = newParent;
 			right.parent = newParent;
 
-		// Else add the middle element to the parent.
+			// Else add the middle element to the parent.
 		} else {
 			var newParentElements = [];
 			var newParentLinks = [];
@@ -249,16 +249,16 @@ function Page () {
 			}
 		}
 		return undefined;
-	}
+	};
 
 	this.getRightIndexOnParent = function(n) {
-		for (i = this.parent.elements.length-1; i >= 0; i--) {
+		for (var i = this.parent.elements.length-1; i >= 0; i--) {
 			if (this.parent.elements[i] <= n) {
 				return i;
 			}
 		}
 		return undefined;
-	}
+	};
 
 	this.handleUnderflowWithNeighbours = function (n) {
 		var elementForParent;
@@ -302,7 +302,7 @@ function Page () {
 
 		var mergedPage = this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
 
-		if (mergedPage.parent.elements.length == 0) {
+		if (mergedPage.parent.elements.length == 0 && mergedPage.parent.parent == undefined) {
 			mergedPage.parent = undefined;
 			window.root = mergedPage;
 			return;

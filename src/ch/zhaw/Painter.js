@@ -17,7 +17,7 @@ function Painter() {
 	this.clear = function() {
 		$("canvas").clearCanvas();
 		window.root = new Page();
-	}
+	};
 
 	this.paintPage = function (displayPage) {
 
