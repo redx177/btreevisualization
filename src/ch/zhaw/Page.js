@@ -302,7 +302,11 @@ function Page () {
 
 		var mergedPage = this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
 
-		window.painter.paintRoot();
+		if (mergedPage.parent.elements.length == 0) {
+			mergedPage.parent = undefined;
+			window.root = mergedPage;
+			return;
+		}
 
 		if (this.isALeaf()) {
 			this.parent.fixAfterDelete(n);
@@ -329,7 +333,6 @@ function Page () {
 			var rightNeighbour = this.parent.getRightNeighbour(n);
 			if (rightNeighbour != undefined && rightNeighbour.elements.length > this.minElementCount) {
 				this.handleUnderflowWithNeighbours(n);
-				window.painter.paintRoot();
 				var p = rightNeighbour.links.shift();
 				p.parent = this;
 				this.links.push(p);
