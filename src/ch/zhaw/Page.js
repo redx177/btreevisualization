@@ -1,6 +1,4 @@
 function Page () {
-	this.minElementCount = 1;
-	this.maxElementCount = 2*this.minElementCount;
 	this.elements = [];
 	this.links = [];
 	this.parent = undefined;
@@ -75,7 +73,7 @@ function Page () {
 
 	this.deleteHere = function (n) {
 		var found = false;
-		for (var i = 0; i < this.maxElementCount; i++) {
+		for (var i = 0; i < window.painter.maxElementCount; i++) {
 			var j = found ? i-1 : i;
 			this.elements[j] = this.elements[i];
 
@@ -103,7 +101,7 @@ function Page () {
 
 	this.deleteHereAndRemoveMiddleLink = function (n) {
 		var found = false;
-		for (var i = 0; i < this.maxElementCount; i++) {
+		for (var i = 0; i < window.painter.maxElementCount; i++) {
 			var j = found ? i-1 : i;
 			this.elements[j] = this.elements[i];
 			if (this.links[i] != undefined) {
@@ -116,8 +114,8 @@ function Page () {
 		}
 		this.elements.pop();
 
-		if (this.links[this.maxElementCount] != undefined) {
-			this.links[this.maxElementCount-1] = this.links[this.maxElementCount];
+		if (this.links[window.painter.maxElementCount] != undefined) {
+			this.links[window.painter.maxElementCount-1] = this.links[window.painter.maxElementCount];
 		}
 		this.links.pop();
 	};
@@ -142,7 +140,7 @@ function Page () {
 
 		if (!this.hasOverflow()) return;
 
-		var middle = parseInt(this.maxElementCount / 2);
+		var middle = parseInt(window.painter.maxElementCount / 2);
 		var middleValue = this.elements[middle];
 
 		var left = this.createLeft(middle);
@@ -209,7 +207,7 @@ function Page () {
 	this.createRight = function (middle) {
 		var right = new Page();
 		var j = 0;
-		for (var i = middle + 1; i < this.maxElementCount + 1; i++) {
+		for (var i = middle + 1; i < window.painter.maxElementCount + 1; i++) {
 			right.elements[j] = this.elements[i];
 			if (this.links[i] != undefined) {
 				right.links[j] = this.links[i];
@@ -217,8 +215,8 @@ function Page () {
 			}
 			j++;
 		}
-		if (this.links[this.maxElementCount+1] != undefined) {
-			right.links[j] = this.links[this.maxElementCount+1];
+		if (this.links[window.painter.maxElementCount+1] != undefined) {
+			right.links[j] = this.links[window.painter.maxElementCount+1];
 			right.links[j].parent = right;
 		}
 		return right;
@@ -266,13 +264,13 @@ function Page () {
 
 		// Check if an element from the left neighbour can be stolen.
 		var neighbour = this.parent.getLeftNeighbour(n);
-		if (neighbour != undefined && neighbour.elements.length > this.minElementCount) {
+		if (neighbour != undefined && neighbour.elements.length > window.painter.minElementCount) {
 			elementForParent = neighbour.elements[neighbour.elements.length-1];
 			elementToPullFromParent = this.getLeftIndexOnParent(elementForParent);
 		} else {
 			// Check if an element from the right neighbour can be stolen.
 			neighbour = this.parent.getRightNeighbour(n);
-			if (neighbour != undefined && neighbour.elements.length > this.minElementCount) {
+			if (neighbour != undefined && neighbour.elements.length > window.painter.minElementCount) {
 				elementForParent = neighbour.elements[0];
 				elementToPullFromParent = this.getRightIndexOnParent(elementForParent);
 
@@ -318,11 +316,11 @@ function Page () {
 	this.fixAfterDelete = function (n) {
 		// Is there an error?
 
-		//if (this.links.length > 0 && this.links.length <= this.minElementCount) {
-		if (this.elements.length < this.minElementCount) {
+		//if (this.links.length > 0 && this.links.length <= window.painter.minElementCount) {
+		if (this.elements.length < window.painter.minElementCount) {
 			// Can an element be stolen from the left sibling?
 			var leftNeighbour = this.parent.getLeftNeighbour(n);
-			if (leftNeighbour != undefined && leftNeighbour.elements.length > this.minElementCount) {
+			if (leftNeighbour != undefined && leftNeighbour.elements.length > window.painter.minElementCount) {
 				this.handleUnderflowWithNeighbours(n);
 				this.links[1] = this.links[0];
 				this.links[0] = leftNeighbour.links.pop();
@@ -331,7 +329,7 @@ function Page () {
 
 			// Can an element be stolen from the right sibling?
 			var rightNeighbour = this.parent.getRightNeighbour(n);
-			if (rightNeighbour != undefined && rightNeighbour.elements.length > this.minElementCount) {
+			if (rightNeighbour != undefined && rightNeighbour.elements.length > window.painter.minElementCount) {
 				this.handleUnderflowWithNeighbours(n);
 				var p = rightNeighbour.links.shift();
 				p.parent = this;
@@ -418,11 +416,11 @@ function Page () {
 	};
 
 	this.hasOverflow = function () {
-		return this.elements.length > this.maxElementCount;
+		return this.elements.length > window.painter.maxElementCount;
 	};
 
 	this.hasUnderflow = function () {
-		return this.elements.length < this.minElementCount;
+		return this.elements.length < window.painter.minElementCount;
 	};
 
 	this.isALeaf = function() {

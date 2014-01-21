@@ -4,6 +4,9 @@ this.continue = false;
 $(function() {
 	window.root = new Page();
 	window.painter = new Painter();
+	window.painter.minElementCount = $('input[name=degree]:checked').val();
+	window.painter.maxElementCount = window.painter.minElementCount * 2;
+	console.log(window.painter.maxElementCount);
 
 	$('#insertText').keypress(function (e) {
 		if (e.which == 13) {
@@ -44,7 +47,9 @@ $(function() {
 	});
 
 	$('input[name=degree]').change(function () {
-		window.painter.clear();
 		console.log($('input[name=degree]:checked').val());
+		window.painter.minElementCount = $('input[name=degree]:checked').val();
+		window.painter.maxElementCount = window.painter.minElementCount * 2
+		window.painter.clear();
 	});
 });
