@@ -5,6 +5,7 @@ function Coordinates(x, y) {
 
 function Painter() {
 
+	this.maxElementCount;
 	this.bottomLevelX = 20;
 
 	this.paintRoot = function() {
@@ -25,10 +26,18 @@ function Painter() {
 
 		if (displayPage.isALeaf()) {
 			coordinates = new Coordinates(this.bottomLevelX, displayPage.level*60 + 20);
-			this.bottomLevelX = this.bottomLevelX + 100;
+			this.bottomLevelX = this.bottomLevelX + 70;
 		}
 
-		var width = 100;
+		$("canvas").drawImage({
+			source: "bg"+this.maxElementCount+".jpg",
+			x: coordinates.x, y: coordinates.y,
+			width: 68*this.maxElementCount*0.5,
+			height: 80*0.5,
+			fromCenter: false
+		});
+		/*
+		var width = 70;
 		$("canvas").drawImage({
 			source: "bg2-ghost.jpg",
 			x: coordinates.x, y: coordinates.y,
@@ -36,6 +45,7 @@ function Painter() {
 			height: width / 5 * 2,
 			fromCenter: false
 		});
+		*/
 		displayPage.coordinates = new Coordinates(coordinates.x, coordinates.y);
 
 		this.paintNumbers(displayPage);
@@ -66,9 +76,9 @@ function Painter() {
 	};
 
 	this.paintNumbers = function(displayPage) {
-		var x = displayPage.coordinates.x + 15;
+		var x = displayPage.coordinates.x + 17;
 		var y = displayPage.coordinates.y + 20;
-		var offset = 33;
+		var offset = 31;
 
 		$(displayPage.elements).each(function (key, value) {
 			$('canvas').drawText({
@@ -101,6 +111,7 @@ function Painter() {
 	};
 
 	this.prepareTree = function (page, level) {
+		this.maxElementCount = page.maxElementCount;
 		var displayPage = new DisplayPage(page.elements, page.parent, level);
 		$(page.links).each(function(key, link) {
 			displayPage.links.push(this.prepareTree(link, level+1));

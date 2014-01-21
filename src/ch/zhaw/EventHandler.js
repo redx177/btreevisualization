@@ -42,4 +42,9 @@ $(function() {
 	$("#step").click(function() {
 		window.continue = true;
 	});
+
+	$('input[name=degree]').change(function () {
+		window.painter.clear();
+		console.log($('input[name=degree]:checked').val());
+	});
 });
