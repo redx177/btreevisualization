@@ -73,7 +73,7 @@ function Page () {
 
 	this.deleteHere = function (n) {
 		var found = false;
-		for (var i = 0; i < this.elements+1; i++) {
+		for (var i = 0; i < this.elements.length+1; i++) {
 			var j = found ? i-1 : i;
 			this.elements[j] = this.elements[i];
 
@@ -103,6 +103,14 @@ function Page () {
 		this.delete(nextLowerElementToN);
 	};
 
+	this.removeElements = function (arr, toRemove) {
+		if (arr[arr.length-1] == toRemove) {
+			arr.pop();
+			return this.removeElements(arr, toRemove);
+		}
+		return arr;
+	};
+
 	this.deleteHereAndRemoveMiddleLink = function (n) {
 		var found = false;
 		for (var i = 0; i < window.painter.maxElementCount; i++) {
@@ -116,7 +124,8 @@ function Page () {
 				found = true;
 			}
 		}
-		this.elements.pop();
+
+		this.elements = this.removeElements(this.elements, undefined);
 
 		if (this.links[window.painter.maxElementCount] != undefined) {
 			this.links[window.painter.maxElementCount-1] = this.links[window.painter.maxElementCount];
@@ -245,21 +254,29 @@ function Page () {
 	};
 
 	this.getLeftIndexOnParent = function(n) {
+		if (n > this.parent.elements[this.parent.elements.length-1]) {
+			return this.parent.elements.length-1;
+		}
 		for (var i = 0; i < this.parent.elements.length; i++) {
-			if (this.parent.elements[i] > n) {
-				return i;
-			}
+			if (this.parent.elements[i] > n) return i-1;
+			//else return i;
+			/*if (this.parent.elements[i] >= n) {
+				return (i == 0) ? 0 : i-1;
+			}*/
 		}
 		return undefined;
 	};
 
 	this.getRightIndexOnParent = function(n) {
+		return this.getLeftIndexOnParent(n)+1;
+		/*
 		for (var i = this.parent.elements.length-1; i >= 0; i--) {
 			if (this.parent.elements[i] <= n) {
 				return i;
 			}
 		}
 		return undefined;
+		*/
 	};
 
 	this.handleUnderflowWithNeighbours = function (n) {
@@ -270,13 +287,14 @@ function Page () {
 		var neighbour = this.parent.getLeftNeighbour(n);
 		if (neighbour != undefined && neighbour.elements.length > window.painter.minElementCount) {
 			elementForParent = neighbour.elements[neighbour.elements.length-1];
-			elementToPullFromParent = this.getLeftIndexOnParent(elementForParent);
+			elementToPullFromParent = this.getRightIndexOnParent(elementForParent);
+			//elementToPullFromParent = this.getLeftIndexOnParent(elementForParent);
 		} else {
 			// Check if an element from the right neighbour can be stolen.
 			neighbour = this.parent.getRightNeighbour(n);
 			if (neighbour != undefined && neighbour.elements.length > window.painter.minElementCount) {
 				elementForParent = neighbour.elements[0];
-				elementToPullFromParent = this.getRightIndexOnParent(elementForParent);
+				elementToPullFromParent = this.getLeftIndexOnParent(elementForParent);
 
 			} else {
 				// No excessive elements on neighbours available.
@@ -304,7 +322,8 @@ function Page () {
 
 		var mergedPage = this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
 
-		if (mergedPage.parent.elements.length == window.painter.minElementCount && mergedPage.parent.parent == undefined) {
+		if (mergedPage.parent.elements.length <= window.painter.minElementCount
+			&& mergedPage.parent.parent == undefined && mergedPage.parent.elements.length == 0) {
 			mergedPage.parent = undefined;
 			window.root = mergedPage;
 			return;
@@ -377,7 +396,9 @@ function Page () {
 			});
 		}
 
-		if (mergedPage.parent.elements.length == window.painter.minElementCount) {
+		if (mergedPage.parent.elements.length <= window.painter.minElementCount
+			&& mergedPage.parent.parent == undefined && mergedPage.parent.elements.length == 0) {
+
 			mergedPage.parent = undefined;
 			window.root = mergedPage;
 		}
@@ -388,7 +409,15 @@ function Page () {
 	};
 
 	this.getElementIndexToPullFromParent = function(n) {
-		return (this.parent.elements[0] > n) ? this.getLeftIndexOnParent(n) : this.getRightIndexOnParent(n);
+		//return (this.parent.elements[0] > n) ? this.getLeftIndexOnParent(n) : this.getRightIndexOnParent(n);
+		//return (this.parent.elements[0] == n) ? this.getRightIndexOnParent(n) : this.getLeftIndexOnParent(n);
+		if (n > this.parent.elements[this.parent.elements.length-1]) {
+			return this.parent.elements.length-1;
+		}
+		if (n <= this.parent.elements[0]) {
+			return 0;
+		}
+		return (this.parent.elements[0] >= n) ? this.getRightIndexOnParent(n) : this.getLeftIndexOnParent(n);
 	};
 
 	this.rotate = function (neighbourToMerge, elementForMe, elementIndexToPullFromParent) {
