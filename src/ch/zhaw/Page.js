@@ -345,8 +345,7 @@ function Page () {
 			var leftNeighbour = this.parent.getLeftNeighbour(n);
 			if (leftNeighbour != undefined && leftNeighbour.elements.length > window.painter.minElementCount) {
 				this.handleUnderflowWithNeighbours(n);
-				this.links[1] = this.links[0];
-				this.links[0] = leftNeighbour.links.pop();
+				this.links.unshift(leftNeighbour.links.pop());
 				return;
 			}
 
