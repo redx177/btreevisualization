@@ -73,7 +73,7 @@ function Page () {
 
 	this.deleteHere = function (n) {
 		var found = false;
-		for (var i = 0; i < window.painter.maxElementCount; i++) {
+		for (var i = 0; i < this.elements+1; i++) {
 			var j = found ? i-1 : i;
 			this.elements[j] = this.elements[i];
 
@@ -81,7 +81,11 @@ function Page () {
 				found = true;
 			}
 		}
-		this.elements.pop();
+		//for (var i = window.painter.maxElementCount; i >=0; i--) {
+		//	if (this.elements[i] == undefined) {
+				this.elements.pop();
+		//	}
+		//}
 	};
 
 	this.deleteOnInnerNode = function (n) {
@@ -300,7 +304,7 @@ function Page () {
 
 		var mergedPage = this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
 
-		if (mergedPage.parent.elements.length == 0 && mergedPage.parent.parent == undefined) {
+		if (mergedPage.parent.elements.length == window.painter.minElementCount && mergedPage.parent.parent == undefined) {
 			mergedPage.parent = undefined;
 			window.root = mergedPage;
 			return;
@@ -373,7 +377,7 @@ function Page () {
 			});
 		}
 
-		if (mergedPage.parent.elements.length == 0) {
+		if (mergedPage.parent.elements.length == window.painter.minElementCount) {
 			mergedPage.parent = undefined;
 			window.root = mergedPage;
 		}
