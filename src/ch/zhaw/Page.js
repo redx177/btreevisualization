@@ -104,7 +104,7 @@ function Page () {
 	};
 
 	this.removeElements = function (arr, toRemove) {
-		if (arr[arr.length-1] == toRemove) {
+		if (arr.length > 0 && arr[arr.length-1] == toRemove) {
 			arr.pop();
 			return this.removeElements(arr, toRemove);
 		}
