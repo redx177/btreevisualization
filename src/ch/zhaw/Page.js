@@ -8,6 +8,8 @@ function Page () {
 	 * @param n Number to insert.
 	 */
 	this.insert = function(n) {
+		if (n == "") return;
+		if (this.find(n) != undefined) return;
 		n = parseInt(n);
 		if (this.hasChildren()) {
 			this.insertOnChild(n);
