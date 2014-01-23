@@ -23,6 +23,8 @@ function Painter() {
 
 	this.paintPage = function (displayPage) {
 
+		if (displayPage.elements.length == 0) return;
+
 		var coordinates = this.paintChildren(displayPage);
 
 		if (displayPage.isALeaf()) {

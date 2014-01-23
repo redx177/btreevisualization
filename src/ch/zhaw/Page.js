@@ -480,7 +480,7 @@ function Page () {
 	};
 
 	this.hasUnderflow = function () {
-		return this.elements.length < window.painter.minElementCount;
+		return this.elements.length < window.painter.minElementCount && !(this.elements.length < window.painter.minElementCount && this.parent == undefined);
 	};
 
 	this.isALeaf = function() {
