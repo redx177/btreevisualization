@@ -111,7 +111,12 @@ function Page () {
 		return arr;
 	};
 
-	this.deleteHereAndRemoveMiddleLink = function (n) {
+	this.deleteHereAndRemoveLink = function (n) {
+		var pos = this.elements.indexOf(n);
+		this.elements.splice(pos, 1);
+		this.links.splice(pos, 1);
+		return;
+
 		var found = false;
 		for (var i = 0; i < window.painter.maxElementCount; i++) {
 			var j = found ? i-1 : i;
@@ -122,6 +127,9 @@ function Page () {
 
 			if (this.elements[i] == n) {
 				found = true;
+				if (i == this.elements.length-1) {
+					this.elements.pop();
+				}
 			}
 		}
 
@@ -130,6 +138,7 @@ function Page () {
 		if (this.links[window.painter.maxElementCount] != undefined) {
 			this.links[window.painter.maxElementCount-1] = this.links[window.painter.maxElementCount];
 		}
+		//this.elements.pop();
 		this.links.pop();
 	};
 
@@ -282,20 +291,21 @@ function Page () {
 	this.handleUnderflowWithNeighbours = function (n) {
 		var elementForParent;
 		var elementToPullFromParent;
+		var stoleLeft;
 
 		// Check if an element from the left neighbour can be stolen.
 		var neighbour = this.parent.getLeftNeighbour(n);
 		if (neighbour != undefined && neighbour.elements.length > window.painter.minElementCount) {
 			elementForParent = neighbour.elements[neighbour.elements.length-1];
 			elementToPullFromParent = this.getRightIndexOnParent(elementForParent);
-			//elementToPullFromParent = this.getLeftIndexOnParent(elementForParent);
+			stoleLeft = true;
 		} else {
 			// Check if an element from the right neighbour can be stolen.
 			neighbour = this.parent.getRightNeighbour(n);
 			if (neighbour != undefined && neighbour.elements.length > window.painter.minElementCount) {
 				elementForParent = neighbour.elements[0];
 				elementToPullFromParent = this.getLeftIndexOnParent(elementForParent);
-
+				stoleLeft = false;
 			} else {
 				// No excessive elements on neighbours available.
 				return false;
@@ -310,6 +320,18 @@ function Page () {
 		this.parent.elements[elementToPullFromParent] = elementForParent;
 		this.insertHere(elementForMe);
 
+		if (!this.isALeaf()) {
+			if (stoleLeft) {
+				var link = neighbour.links.pop();
+				link.parent = this;
+				this.links.unshift(link);
+			} else {
+				var link = neighbour.links.shift();
+				link.parent = this;
+				this.links.push(link);
+			}
+		}
+
 		return true;
 	};
 
@@ -318,7 +340,7 @@ function Page () {
 		var elementIndexToPullFromParent = this.getElementIndexToPullFromParent(n);
 
 		var elementForMe = this.parent.elements[elementIndexToPullFromParent];
-		this.parent.deleteHereAndRemoveMiddleLink(elementForMe);
+		this.parent.deleteHereAndRemoveLink(elementForMe);
 
 		var mergedPage = this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
 
@@ -340,7 +362,7 @@ function Page () {
 		// Is there an error?
 
 		//if (this.links.length > 0 && this.links.length <= window.painter.minElementCount) {
-		if (this.elements.length < window.painter.minElementCount) {
+		if (this.elements.length < window.painter.minElementCount && this.parent != undefined) {
 			// Can an element be stolen from the left sibling?
 			var leftNeighbour = this.parent.getLeftNeighbour(n);
 			if (leftNeighbour != undefined && leftNeighbour.elements.length > window.painter.minElementCount) {
@@ -365,10 +387,12 @@ function Page () {
 			var elementIndexToPullFromParent = this.getElementIndexToPullFromParent(n);
 			var elementForMe = this.parent.elements[elementIndexToPullFromParent];
 
-			this.parent.deleteHereAndRemoveMiddleLink(elementForMe);
+			this.parent.deleteHereAndRemoveLink(elementForMe);
 			var mergedPage = this.rotate(neighbourToMerge, elementForMe, elementIndexToPullFromParent);
 
 			this.fixLinksAfterRotate(mergedPage, neighbourToMerge);
+
+			//this.parent.handleUnderflow(n);
 		}
 	};
 
@@ -400,6 +424,7 @@ function Page () {
 
 			mergedPage.parent = undefined;
 			window.root = mergedPage;
+			return;
 		}
 	};
 
