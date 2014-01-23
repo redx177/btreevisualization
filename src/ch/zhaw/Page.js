@@ -267,7 +267,7 @@ function Page () {
 			return this.parent.elements.length-1;
 		}
 		for (var i = 0; i < this.parent.elements.length; i++) {
-			if (this.parent.elements[i] > n) return i-1;
+			if (this.parent.elements[i] >= n) return i-1;
 			//else return i;
 			/*if (this.parent.elements[i] >= n) {
 				return (i == 0) ? 0 : i-1;
