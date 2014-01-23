@@ -291,21 +291,21 @@ function Page () {
 	this.handleUnderflowWithNeighbours = function (n) {
 		var elementForParent;
 		var elementToPullFromParent;
-		var stoleLeft;
+		//var stoleLeft;
 
 		// Check if an element from the left neighbour can be stolen.
 		var neighbour = this.parent.getLeftNeighbour(n);
 		if (neighbour != undefined && neighbour.elements.length > window.painter.minElementCount) {
 			elementForParent = neighbour.elements[neighbour.elements.length-1];
 			elementToPullFromParent = this.getRightIndexOnParent(elementForParent);
-			stoleLeft = true;
+			//stoleLeft = true;
 		} else {
 			// Check if an element from the right neighbour can be stolen.
 			neighbour = this.parent.getRightNeighbour(n);
 			if (neighbour != undefined && neighbour.elements.length > window.painter.minElementCount) {
 				elementForParent = neighbour.elements[0];
 				elementToPullFromParent = this.getLeftIndexOnParent(elementForParent);
-				stoleLeft = false;
+				//stoleLeft = false;
 			} else {
 				// No excessive elements on neighbours available.
 				return false;
@@ -320,6 +320,7 @@ function Page () {
 		this.parent.elements[elementToPullFromParent] = elementForParent;
 		this.insertHere(elementForMe);
 
+		/*
 		if (!this.isALeaf()) {
 			if (stoleLeft) {
 				var link = neighbour.links.pop();
@@ -330,7 +331,7 @@ function Page () {
 				link.parent = this;
 				this.links.push(link);
 			}
-		}
+		}*/
 
 		return true;
 	};
